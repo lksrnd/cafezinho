@@ -7,25 +7,6 @@
 using namespace std;
 
 typedef enum {
-    SUM,
-    SUB,
-    MULTIPLY,
-    DIVIDE,
-    EQUAL,
-    DIFFERENT,
-    MINOR,
-    MORE,
-    NEGATIVE,
-    REST,
-    NEGATE,
-    AND,
-    OR,
-    CONDITIONAL,
-    LESS_EQUAL,
-    GREATER_EQUAL
-} Operator;
-
-typedef enum {
     VAR_EMPTY,
     VAR_INTEGER,
     VAR_ERROR,
@@ -63,6 +44,25 @@ typedef enum {
     EXPRESSION,
     EXPRESSION_LIST
 } NodeType;
+
+typedef enum {
+    SUM,
+    SUB,
+    MULTIPLY,
+    DIVIDE,
+    EQUAL,
+    DIFFERENT,
+    MINOR,
+    MORE,
+    NEGATIVE,
+    REST,
+    NEGATE,
+    AND,
+    OR,
+    CONDITIONAL,
+    LESS_EQUAL,
+    GREATER_EQUAL
+} Operator;
 
 struct Element {
     vector<Element*> list;
