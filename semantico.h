@@ -27,19 +27,30 @@ bool checkSemantic(Element* node, int level, valueReturning& ret);
 VarType checkType(Element* node)
 {
     switch (node->nodeType) {
-    case INTEGER:
     case CHAR:
-    case STRING: {
-        //cout << "Entrou INTEGER - CHAR - STRING" << endl;
+    case STRING:
+    case INTEGER: {
+        //cout << "Entrou em char string integer" << endl;
         return node->varType;
-        //cout << "Saiu INTEGER - CHAR - STRING" << endl;
+        //cout << "Saiu de char string integer" << endl;
+    } break;
+    case IDENTIFIER: {
+        //cout << "Entrou IDENTIFIER" << endl;
+        string name = *(node->name);
+        if (!symbols.count(name)) {
+        cout << "ERRO SEMANTICO: IDENTIFIER [" << name << "] NAO FOI DECLARADO "
+                << "(LINHA " << node->lineNum << ")\n";
+        return VAR_ERROR;
+    }
+        return symbols[name].top()->varType;
+        //cout << "Saiu IDENTIFIER" << endl;
     } break;
     case ID_ARRAY: {
         //cout << "Entrou ID_ARRAY" << endl;
         string name = *(node->name);
         //cout << name << endl;
         if (!symbols.count(name)) {
-            cout << "ERRO SEMANTICO: ARRAY COM NOME [" << name << "] NAO FOI DECLARADO "
+            cout << "ERRO SEMANTICO: NOME DO ARRAY [" << name << "] NAO FOI DECLARADO "
                  << "(LINHA " << node->lineNum << ")\n";
             return VAR_ERROR;
         } else if (checkType(node->list[0]) != VAR_INTEGER) {
@@ -54,22 +65,27 @@ VarType checkType(Element* node)
         //cout << "Saiu ID_ARRAY" << endl;
         return symbols[name].top()->varType;
     } break;
-    case IDENTIFIER: {
-        //cout << "Entrou IDENTIFIER" << endl;
-        string name = *(node->name);
-        if (!symbols.count(name)) {
-            cout << "ERRO SEMANTICO: IDENTIFICADOR [" << name << "] NAO FOI DECLARADO "
-                 << "(LINHA " << node->lineNum << ")\n";
+    case TERNARY: {
+        ///cout << "Entrou TERNARY" << endl;
+        VarType va = checkType(node->list[0]);
+        VarType vb = checkType(node->list[1]);
+        VarType vc = checkType(node->list[2]);
+        if (va == VAR_ERROR || vb == VAR_ERROR || vc == VAR_ERROR)
+            return VAR_ERROR;
+        if (va != VAR_INTEGER) {
+            cout << "ERRO SEMANTICO: TIPO INTEIRO ESPERADO EM OPERACOES CONDICIONAIS "
+                    << "(LINHA " << node->lineNum << ")\n";
             return VAR_ERROR;
         }
-        return symbols[name].top()->varType;
-        //cout << "Saiu IDENTIFIER" << endl;
+        if (va != vb) {
+            cout << "ERRO SEMANTICO: TIPOS DIFERENTES NA OPERACAO "
+                    << "(LINHA " << node->lineNum << ")\n";
+            return VAR_ERROR;
+        }
+        //cout << "Saiu TERNARY" << endl;
+        return vb;
     } break;
-    case UNARY: {
-        //cout << "Entrou UNARY" << endl;
-        return checkType(node->list[0]);
-        //cout << "Saiu UNARY"  << endl;
-    } break;
+    
     case BINARY: {
         //cout << "Entrou BINARY" << endl;
         VarType va = checkType(node->list[0]);
@@ -85,25 +101,23 @@ VarType checkType(Element* node)
         return ((vb == VAR_ERROR) ? vb : va);
         //cout << "Saiu BINARY" << endl;
     } break;
-    case TERNARY: {
-        ///cout << "Entrou TERNARY" << endl;
-        VarType va = checkType(node->list[0]);
-        VarType vb = checkType(node->list[1]);
-        VarType vc = checkType(node->list[2]);
-        if (va == VAR_ERROR || vb == VAR_ERROR || vc == VAR_ERROR)
+    case UNARY: {
+        //cout << "Entrou UNARY" << endl;
+        return checkType(node->list[0]);
+        //cout << "Saiu UNARY"  << endl;
+    } break; 
+    case FUNC_CALL: {
+        //cout << "Entrou FUNC_CALL" << endl;
+        string name = *(node->name);
+        if (!symbols.count(name)) {
+            cout << "ERRO SEMANTICO: FUNCAO [" << name << "] NAO FOI DECLARADA (LINHA " << node->lineNum << ")\n";
             return VAR_ERROR;
-        if (va != VAR_INTEGER) {
-            cout << "ERRO SEMANTICO: TIPO INTEIRO ESPERADO EM OPERACOES CONDICIONAIS "
-                 << "(LINHA " << node->lineNum << ")\n";
-            return VAR_ERROR;
-        }
-        if (va != vb) {
-            cout << "ERRO SEMANTICO: TIPOS DIFERENTES NA OPERACAO "
-                 << "(LINHA " << node->lineNum << ")\n";
+        } else if (symbols[name].top()->nodeType != FUNC_DECLARATION) {
+            cout << "ERRO SEMANTICO: AO DECLARAR A FUNCAO [" << name << "] (LINHA " << node->lineNum << ")\n";
             return VAR_ERROR;
         }
-        //cout << "Saiu TERNARY" << endl;
-        return vb;
+        return symbols[name].top()->varType;
+        //cout << "Saiu FUNC_CALL" << endl;
     } break;
     case ASSIGN: {
         //cout << "Entrou ASSIGN" << endl;
@@ -118,19 +132,6 @@ VarType checkType(Element* node)
         }
         //cout << "Saiu ASSIGN" << endl;
         return va;
-    } break;
-    case FUNC_CALL: {
-        //cout << "Entrou FUNC_CALL" << endl;
-        string name = *(node->name);
-        if (!symbols.count(name)) {
-            cout << "ERRO SEMANTICO: FUNCAO [" << name << "] NAO FOI DECLARADA (LINHA " << node->lineNum << ")\n";
-            return VAR_ERROR;
-        } else if (symbols[name].top()->nodeType != FUNC_DECLARATION) {
-            cout << "ERRO SEMANTICO: AO DECLARAR A FUNCAO [" << name << "] (LINHA " << node->lineNum << ")\n";
-            return VAR_ERROR;
-        }
-        return symbols[name].top()->varType;
-        //cout << "Saiu FUNC_CALL" << endl;
     } break;
     default:
         return VAR_ERROR;
@@ -232,14 +233,17 @@ bool checkSemantic(Element* node, int level, valueReturning& ret)
         if (checkType(node) == VAR_ERROR || checkNodes(node, level, ret))
             return true;
         string name = *(node->name);
-        int qtd = qtdArgs[name];
+        int expectedQty = qtdArgs[name];
 
-        if ((!node->list.size() && qtd) || (node->list[0]->list.size() < qtd)) {
-            cout << "ERRO SEMANTICO: QUANTIDADE DE PARAMETROS PASSADOS PARA A FUNCAO [" << name << "] "
-                 << "E MENOR DO QUE O ESPERADO (LINHA " << node->lineNum << ")\n";
-            return true;
-        }
-        if ((node->list.size() && (node->list[0]->list.size() > qtd))) {
+        int passedQty = node->list.empty() ? 0 : node->list[0]->list.size();    
+
+          if (passedQty != expectedQty) {
+        cout << "ERRO SEMANTICO: QUANTIDADE DE PARAMETROS PASSADOS PARA A FUNCAO [" 
+             << name << "] E " << (passedQty < expectedQty ? "MENOR" : "MAIOR")
+             << " DO QUE O ESPERADO (LINHA " << node->lineNum << ")\n";
+        return true;
+    }
+        if ((node->list.size() && (node->list[0]->list.size() > expectedQty))) {
             cout << "ERRO SEMANTICO: QUANTIDADE DE PARAMETROS PASSADOS PARA A FUNCAO [" << name << "] "
                  << "E MAIOR DO QUE O ESPERADO (LINHA " << node->lineNum << ")\n";
             return true;
