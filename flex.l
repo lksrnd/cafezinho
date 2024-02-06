@@ -33,7 +33,7 @@ ID      [_a-zA-Z][_a-zA-Z0-9]*
 }
 
 "/*" {
-        //COMENTARIO DE BLOCO
+        //COMENTARIO BLOCO
         char pos;
         while( true )
         {
@@ -131,7 +131,7 @@ ID      [_a-zA-Z][_a-zA-Z0-9]*
                 return T_CHARCONST;
             }
             flagError = true;
-            string message = "ERRO: CONSTANTE DE CARACTERE COM MULTIPLOS CARACTERES (LINHA ";
+            string message = "ERRO: CONSTANTE DE CARACTERE COM MAIS DE UM CARACTERES (LINHA ";
             message += to_string(lineNum);
             message += ")";
             yyerror((char*)message.c_str());
