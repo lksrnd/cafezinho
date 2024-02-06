@@ -903,7 +903,7 @@ int main(int argc, char *argv[])
     if ( argc != 2 )
     {
         flagError = true;
-        yyerror("PARA EXECUTAR O PROGRAMA, DIGITE: ./cafezinho nome_arquivo_entrada");
+        yyerror("PARA EXECUTAR O PROGRAMA, DIGITE: ./cafezinho nome_arquivo");
         return -1;
     }
     
